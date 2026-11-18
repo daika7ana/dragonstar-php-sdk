@@ -1,0 +1,66 @@
+{
+    "name": "daika7ana/dragonstar-php-sdk",
+    "description": "Typed PHP SDK for the Dragon Star Courier API.",
+    "type": "library",
+    "license": "GPL-3.0-or-later",
+    "keywords": [
+        "dragonstar",
+        "dragon star",
+        "courier",
+        "shipping",
+        "awb",
+        "sdk",
+        "api",
+        "psr-18"
+    ],
+    "homepage": "https://github.com/daika7ana/dragonstar-php-sdk",
+    "support": {
+        "issues": "https://github.com/daika7ana/dragonstar-php-sdk/issues",
+        "source": "https://github.com/daika7ana/dragonstar-php-sdk",
+        "docs": "https://github.com/daika7ana/dragonstar-php-sdk#readme"
+    },
+    "autoload": {
+        "psr-4": {
+            "Daika7ana\\DragonStar\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Daika7ana\\DragonStar\\Tests\\": "tests/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Dan-Radu Pana"
+        }
+    ],
+    "require": {
+        "php": ">=8.3",
+        "ext-json": "*",
+        "guzzlehttp/guzzle": "^7.0 || ^8.0",
+        "guzzlehttp/psr7": "^2.0 || ^3.0",
+        "psr/http-message": "^1.0 || ^2.0",
+        "psr/http-factory": "^1.0",
+        "psr/http-client": "^1.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12.0 || ^13.0",
+        "laravel/pint": "^1.29",
+        "phpstan/phpstan": "^2.1",
+        "symfony/http-foundation": "^5.0 || ^6.0 || ^7.0"
+    },
+    "suggest": {
+        "symfony/http-foundation": "Required to use the optional HttpFoundationBridge with Symfony or Laravel."
+    },
+    "scripts": {
+        "pint": "@php vendor/bin/pint --test",
+        "stan": "@php vendor/bin/phpstan --no-progress",
+        "test": "@php vendor/bin/phpunit",
+        "test:unit": "@php vendor/bin/phpunit tests/Unit",
+        "ci": [
+            "@pint",
+            "@stan",
+            "@test:unit"
+        ]
+    }
+}

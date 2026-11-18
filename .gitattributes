@@ -1,0 +1,10 @@
+/.github export-ignore
+/docs export-ignore
+/tests export-ignore
+/AGENTS.md export-ignore
+/CHANGELOG.md export-ignore
+/phpstan.neon export-ignore
+/pint.json export-ignore
+/phpunit.xml.dist export-ignore
+/.gitattributes export-ignore
+"/Dragon Star Curier API v1.json" export-ignore
