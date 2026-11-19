@@ -81,10 +81,16 @@ $tracking->status?->descriptionRo; // Romanian
 `includeEvents: false` sends `?events=false` and leaves `$tracking->events`
 empty.
 
+A malformed AWB (not 8 digits starting with 9) fails validation with
+`422 validation_failed`; only a well-formed, unknown AWB gives
+`404 awb_not_found`.
+
 ### `trackMany(array $awbs, bool $includeEvents = false): TrackingBatch`
 
 `POST /v1/awb/tracking` — up to 100 AWBs. Results keep the requested order.
-Unknown or foreign AWBs appear in `notFound`.
+Unknown or foreign AWBs appear in `notFound`. A malformed entry rejects the
+whole request with `422 validation_failed`, so only well-formed AWBs can land
+in `notFound`.
 
 ```php
 $batch->count;      // number of results
@@ -102,7 +108,10 @@ not been picked up, added to a manifest or invoiced. Otherwise the API answers
 
 ### `returnLegs(int $awb): Collection<int, ReturnLeg>`
 
-`GET /v1/awb/{awb}/return` — return shipments linked to the AWB.
+`GET /v1/awb/{awb}/return` — return shipments linked to the AWB. When there
+are none the API answers `404 return_not_found`, which is also the normal
+answer for a fresh shipment: `returnParcel` at creation records the option but
+does not create a return leg.
 
 ### `label(int $awb): Document`
 
@@ -117,7 +126,8 @@ The format is case-sensitive in the API; the enum guarantees the correct case.
 
 `GET /v1/awb/{awb}/label/zpl/{nb}` — raw ZPL for one piece. Piece `1` carries
 the AWB barcode. The payload contains only `^XA`…`^XZ`; printer width, length
-and darkness come from the printer configuration (100×150 mm, 203 DPI).
+and darkness come from the printer configuration (100×150 mm, 203 DPI). A
+piece above the shipment's piece count fails validation with `422`.
 
 ### Documents
 

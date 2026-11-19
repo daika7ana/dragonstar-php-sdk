@@ -12,6 +12,9 @@ use Daika7ana\DragonStar\Enums\ShipmentType;
  *
  * `weight` and `pieces` are required for a parcel; `weight` is required for a
  * pallet. Either way they are optional here and validated by the API.
+ *
+ * `codPaymentType` is required once `codAmount` is above 0 — there is no
+ * default — and `account` cannot be combined with `reverseShipment`.
  */
 final readonly class AwbCreateRequest
 {

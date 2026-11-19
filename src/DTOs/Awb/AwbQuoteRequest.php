@@ -9,6 +9,9 @@ use Daika7ana\DragonStar\Enums\ShipmentType;
 
 /**
  * Payload for POST /v1/awb/quote. Nothing is created.
+ *
+ * `codPaymentType` is required once `codAmount` is above 0 — there is no
+ * default — and `account` cannot be combined with `reverseShipment`.
  */
 final readonly class AwbQuoteRequest
 {

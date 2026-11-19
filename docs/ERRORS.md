@@ -79,8 +79,8 @@ try {
 | `invalid_json` | 400 | Body is not a JSON object |
 | `empty_body` | 400 | Body was required but empty |
 | `validation_failed` | 422 | See `$e->errors` |
-| `awb_not_found` | 404 | No such AWB, or it belongs to another client |
-| `return_not_found` | 404 | No return legs for that AWB |
+| `awb_not_found` | 404 | Well-formed AWB (8 digits starting with 9) that does not exist or belongs to another client |
+| `return_not_found` | 404 | The AWB has no return legs |
 | `awb_not_deletable` | 409 | Picked up, manifested or invoiced |
 | `pickup_not_found` | 404 | No such pickup |
 | `pickup_not_cancellable` | 409 | Refused, collected or already cancelled |
@@ -107,6 +107,13 @@ Two codes never come from the server:
 Only `422` carries field errors. The API normalizes them as
 `field => list of messages`, and `$e->errors` preserves that shape. The
 exception message uses `detail`, so it is safe to log but not to parse.
+
+AWB numbers are validated before lookup: a value that is not 8 digits starting
+with 9 fails with `validation_failed` (`awb` or `awbs` field), not
+`awb_not_found`. In `trackMany`, one malformed entry rejects the whole batch.
+
+`codPaymentType` is required when `codAmount > 0`, for both creation and
+quoting — the API does not fall back to `cash`.
 
 ## Rate limiting
 
