@@ -12,7 +12,7 @@ use Daika7ana\DragonStar\DTOs\Awb\Quote;
 use Daika7ana\DragonStar\DTOs\Awb\ReturnLeg;
 use Daika7ana\DragonStar\DTOs\Awb\Tracking;
 use Daika7ana\DragonStar\DTOs\Awb\TrackingBatch;
-use Daika7ana\DragonStar\DTOs\Common\Collection;
+use Daika7ana\SimpleCollections\Collection;
 use Daika7ana\DragonStar\DTOs\Common\Document;
 use Daika7ana\DragonStar\Enums\LabelFormat;
 use Daika7ana\DragonStar\Exceptions\ApiException;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Daika7ana\DragonStar\Resources;
 
 use Daika7ana\DragonStar\Client;
-use Daika7ana\DragonStar\DTOs\Common\Collection;
+use Daika7ana\SimpleCollections\Collection;
 use Daika7ana\DragonStar\DTOs\Directory\BranchList;
 use Daika7ana\DragonStar\DTOs\Directory\LocalityDistance;
 use Daika7ana\DragonStar\Exceptions\ApiException;

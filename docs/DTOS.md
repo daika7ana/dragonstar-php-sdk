@@ -27,7 +27,7 @@ Payload for `awb()->create()` and `awb()->createForBranch()`.
 | `width` | `?float` | `null` | cm |
 | `height` | `?float` | `null` | cm |
 | `codAmount` | `?float` | `null` | RON, 0–15000 |
-| `codPaymentType` | `?CodPaymentType` | `null` | Required when `codAmount > 0`; API default is `cash` |
+| `codPaymentType` | `?CodPaymentType` | `null` | Required when `codAmount > 0`; there is no default |
 | `insuredValue` | `?float` | `null` | Declared value, 0–15000 |
 | `returnAwb` | `bool` | `false` | Signed return AWB |
 | `returnDocuments` | `bool` | `false` | Return signed accompanying documents |
@@ -79,6 +79,9 @@ postal code.
 | `insuredValue` | `?float` | `null` |
 | `returnAwb` … `reverseShipment` | `bool` | `false` |
 | `notes`, `documentDetails` | `?string` | `null` |
+
+`codPaymentType` is required when `codAmount > 0`, and `account` cannot be
+combined with `reverseShipment`.
 
 ### `DTOs\Pickup\PickupCreateRequest`
 
@@ -222,12 +225,13 @@ documents no response body.
 
 ## Collection helper methods
 
-`DTOs\Common\Collection` implements `Countable`, `IteratorAggregate` and
-`ArrayAccess`:
-
-`count`, `first`, `last`, `get`, `keys`, `values`, `has`, `hasKey`, `isEmpty`,
-`isNotEmpty`, `filter`, `reject`, `only`, `except`, `map`, `mapWithKeys`,
-`pluck`, `push`, `prepend`, `each`, `toArray`, `all`.
+Every list returned by the SDK is a `Daika7ana\SimpleCollections\Collection`
+from the [simple-collections](https://github.com/daika7ana/simple-collections)
+package. It implements `Countable`, `IteratorAggregate`, `ArrayAccess` and
+`JsonSerializable`, is generically typed, and ships Laravel-style helpers:
+`count`, `first`, `last`, `get`, `keys`, `values`, `has`, `filter`, `reject`,
+`map`, `mapWithKeys`, `pluck`, `sortBy`, `sum`, `push`, `prepend`, `each`,
+`toArray`, `all` and more.
 
 ```php
 use Daika7ana\DragonStar\DTOs\Awb\Tracking;

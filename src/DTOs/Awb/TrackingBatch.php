@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Daika7ana\DragonStar\DTOs\Awb;
 
-use Daika7ana\DragonStar\DTOs\Common\Collection;
+use Daika7ana\SimpleCollections\Collection;
 use Daika7ana\DragonStar\Support\ApiResponseMapper;
 
 final readonly class TrackingBatch
