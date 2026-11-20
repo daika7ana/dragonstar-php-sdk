@@ -1,14 +1,15 @@
-# Dragon Star PHP SDK
-
 <div align="center">
+
+<h1>Dragon Star PHP SDK</h1>
 
 [![CI](https://github.com/daika7ana/dragonstar-php-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/daika7ana/dragonstar-php-sdk/actions/workflows/ci.yml)
 [![PHP 8.3+](https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=flat-square&logo=php)](https://www.php.net/)
 [![PHPUnit](https://img.shields.io/badge/PHPUnit-12%E2%80%9313-0A7BBB?style=flat-square)](docs/TESTING.md)
+[![Smoke Tests](https://img.shields.io/badge/Smoke%20Tests-Live%20API-orange?style=flat-square)](docs/TESTING.md)
 [![PSR Standards](https://img.shields.io/badge/PSR-7%2F17%2F18-blue?style=flat-square)](https://www.php-fig.org/)
 [![License](https://img.shields.io/badge/license-GPL--3.0--or--later-green?style=flat-square)](LICENSE)
 
-A modern, type-safe PHP SDK for the **Dragon Star Curier API v1**
+A modern, type-safe PHP SDK for the **Dragon Star courier API**
 
 </div>
 
@@ -56,11 +57,15 @@ A modern, type-safe PHP SDK for the **Dragon Star Curier API v1**
 
 ## Installation
 
+### Via Composer
+
 ```bash
 composer require daika7ana/dragonstar-php-sdk
 ```
 
 ## Quick Start
+
+Working with the Dragon Star API is straightforward:
 
 ```php
 use Daika7ana\DragonStar\Client;
@@ -100,6 +105,8 @@ $label = $client->awb()->label($created->awb);
 file_put_contents($label->getFilename('awb.pdf'), $label->getContents());
 ```
 
+That's it! You've got a client ready to quote, create and label shipments.
+
 ## Configuration
 
 ### Base URL
@@ -128,11 +135,17 @@ $client = Client::create(apiKey: 'your-api-key');
 $client->setApiKey('another-key');
 ```
 
+Keep the key out of source control and read it from the environment instead, for example `getenv('DRAGONSTAR_API_KEY')` — see [Authentication](#authentication).
+
 ### Request Timeouts
 
 Requests time out after 30 seconds by default with the bundled transport (10
-seconds to connect) (an injected `GuzzleClient` keeps its own timeout configuration). Override it with `new ClientConfig(timeout: 60.0)` or
-`withTimeout()`, and leave `timeout` at `null` to defer to the HTTP client. A
+seconds to connect); an injected `GuzzleClient` keeps its own timeout
+configuration. Override the default with `new ClientConfig(timeout: 60.0)` or
+`withTimeout()`, and leave `timeout` at `null` to defer to the HTTP client.
+
+Precedence, highest first: a per-call override, then `ClientConfig::timeout`,
+then the transport constructor arguments, then the bundled 30.0/10.0 defaults. A
 per-call override always wins:
 
 ```php
@@ -204,8 +217,14 @@ exceeding a limit the API answers `429` with `code: rate_limit_exceeded` and a
 
 ### Zero Framework Dependencies
 
-This package works equally well in Laravel, Symfony, standalone PHP and
-microservices. No framework is required by `require`.
+This package works equally well everywhere:
+
+- 🌐 **Laravel** applications
+- 🌐 **Symfony** projects
+- 🌐 **Standalone PHP** applications
+- 🌐 **Microservices**
+
+No framework is required by `require`.
 
 ### Custom HTTP Client
 
@@ -234,17 +253,37 @@ timeout throws `InvalidArgumentException`.
 
 ## Testing
 
+### Run Static Analysis
+
 ```bash
-composer ci        # validate -> pint -> stan -> test:unit (exactly what CI runs)
-composer pint      # style check only — never fixes
 composer stan      # PHPStan level 8 over src/
+```
+
+PHPStan is configured to analyze the `src/` directory at level 8.
+
+### Run Full Test Suite
+
+```bash
 composer test      # every test, smoke included
 composer test:unit # tests/Unit only
 ```
 
+### Run The Same Checks As CI
+
+```bash
+composer ci        # validate -> pint -> stan -> test:unit (exactly what CI runs)
+composer pint      # style check only — never fixes
+```
+
+### Test Environment Variables
+
 The live smoke test (`tests/Smoke/ClientSmokeTest.php`) skips itself unless
-`DRAGONSTAR_TEST_API_KEY` is set; copy `phpunit.xml.dist` to `phpunit.xml` and
-fill it in to run it. The key's IP allowlist must include the machine.
+`DRAGONSTAR_TEST_API_KEY` is set. Copy `phpunit.xml.dist` to `phpunit.xml` and
+fill it in to run it; the key's IP allowlist must include the machine.
+
+| Variable | Purpose |
+|----------|---------|
+| `DRAGONSTAR_TEST_API_KEY` | Live API key for the smoke test |
 
 [See detailed testing docs →](docs/TESTING.md)
 
