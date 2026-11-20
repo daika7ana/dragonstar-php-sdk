@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-11-20
+
+### Added
+
+- `Client::create()` and `Client::__construct()` accept any PSR-18 `ClientInterface`; a bare client is wrapped in `Psr18HttpClientAdapter`.
+- `GuzzleHttpClient::DEFAULT_TIMEOUT`/`DEFAULT_CONNECT_TIMEOUT` and `timeout:`/`connectTimeout:` constructor arguments.
+
+### Changed
+
+- **Breaking:** `ClientConfig::timeout` defaults to `null` instead of `30.0`. The bundled transport applies 30 s request / 10 s connect, adding a 10 s connect cap that was previously absent. A custom `HttpClientInterface` receives `null` unless a timeout is configured.
+- A non-null `ClientConfig::timeout` combined with a bare PSR-18 client throws `InvalidArgumentException`, and a per-call timeout passed to such a client throws too.
+- A PSR-18 client that throws a `ClientExceptionInterface` is now wrapped in `TransportException`.
+
+### Removed
+
+- **Breaking:** `Daika7ana\DragonStar\Support\HttpFoundationBridge` and the `symfony/http-foundation` dependency. Convert between PSR-7 and HttpFoundation types in application code.
+
 ## [1.0.0] - 2026-11-19
 
 ### Added

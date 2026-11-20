@@ -11,6 +11,9 @@ use Daika7ana\DragonStar\Tests\Support\FakeHttpClient;
 use GuzzleHttp\Psr7\HttpFactory;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
 class ClientTest extends TestCase
 {
@@ -69,14 +72,14 @@ class ClientTest extends TestCase
         $this->assertFalse($httpClient->lastRequest?->hasHeader('X-Api-Key'));
     }
 
-    public function testDefaultTimeoutIsThirtySeconds(): void
+    public function testDefaultTimeoutIsDeferredToTheHttpClient(): void
     {
         $httpClient = new FakeHttpClient(static fn() => new Response(200, [], '{}'));
 
         $client = Client::create(httpClient: $httpClient);
         $client->send($client->createRequest('GET', '/v1/counties'));
 
-        $this->assertSame(30.0, $httpClient->lastTimeout);
+        $this->assertNull($httpClient->lastTimeout);
     }
 
     public function testGlobalTimeoutIsForwardedToTheHttpClient(): void
@@ -111,6 +114,24 @@ class ClientTest extends TestCase
         $client->send($client->createRequest('GET', '/v1/counties'), 5.0);
 
         $this->assertSame(5.0, $httpClient->lastTimeout);
+    }
+
+    public function testForeignPsr18ClientCannotBeCombinedWithConfigTimeout(): void
+    {
+        $psr18 = new class implements ClientInterface {
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                throw new \RuntimeException('not used');
+            }
+        };
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('ClientConfig::timeout cannot be applied to a foreign PSR-18 client; configure the timeout on that client or leave it null.');
+
+        Client::create(
+            config: new ClientConfig(apiKey: 'test-api-key', timeout: 5.0),
+            httpClient: $psr18,
+        );
     }
 
     public function testResourcesAreLazySingletons(): void

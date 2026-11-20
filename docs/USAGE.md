@@ -16,7 +16,6 @@ Use this page as the entry point for package documentation.
 ## Notes
 
 - The package is framework-agnostic and PSR-first by design.
-- Laravel/Symfony support is optional and additive via bridge utilities.
 - All v1 endpoints documented by Dragon Star are implemented; there is no v2.
 - API keys are bound to IP allowlists; a new machine needs its public IP added
   to the key in the Dragon Star account.

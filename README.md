@@ -40,7 +40,6 @@ A modern, type-safe PHP SDK for the **Dragon Star Curier API v1**
 - ✅ **Binary Documents** — PDF/ZPL labels and manifest PDFs with filename helpers
 - ✅ **Iterable Collections** — `count`, `first`, `last`, `get`, `filter`, `map`, `pluck`, …
 - ✅ **Static Analysis with PHPStan** — Level 8 over `src/`
-- ✅ **Symfony/Laravel Bridge** — Optional `HttpFoundationBridge`
 - ✅ **Comprehensive Tests** — Unit suite plus an opt-in live smoke test
 
 ### Perfect For
@@ -131,9 +130,10 @@ $client->setApiKey('another-key');
 
 ### Request Timeouts
 
-Requests time out after 30 seconds by default. Override it with
-`new ClientConfig(timeout: 60.0)` or `withTimeout()`, and pass `timeout: null`
-to defer to the HTTP client. A per-call override always wins:
+Requests time out after 30 seconds by default with the bundled transport (10
+seconds to connect) (an injected `GuzzleClient` keeps its own timeout configuration). Override it with `new ClientConfig(timeout: 60.0)` or
+`withTimeout()`, and leave `timeout` at `null` to defer to the HTTP client. A
+per-call override always wins:
 
 ```php
 $client->send($request, 2.5);
@@ -207,32 +207,35 @@ exceeding a limit the API answers `429` with `code: rate_limit_exceeded` and a
 This package works equally well in Laravel, Symfony, standalone PHP and
 microservices. No framework is required by `require`.
 
-### Optional: HttpFoundation Bridge
-
-`HttpFoundationBridge` converts between PSR-7 and Symfony HttpFoundation for
-Laravel/Symfony integrations. It needs Symfony's HttpFoundation, which this
-package does not install: `composer require symfony/http-foundation`.
-
 ### Custom HTTP Client
 
-Pass any PSR-18 client wrapped in `HttpClientInterface`, or inject PSR-17
-factories:
+Pass any PSR-18 client (auto-wrapped), or an `HttpClientInterface`
+implementation if you need per-request timeouts. PSR-17 factories may be
+injected alongside the client:
 
 ```php
 use Daika7ana\DragonStar\Client;
-use Daika7ana\DragonStar\Http\HttpClientInterface;
 
-/** @var HttpClientInterface $customClient */
-$client = Client::create(httpClient: $customClient, apiKey: 'your-api-key');
+/** @var \Psr\Http\Client\ClientInterface $psr18 */
+/** @var \Psr\Http\Message\RequestFactoryInterface $requestFactory */
+/** @var \Psr\Http\Message\StreamFactoryInterface $streamFactory */
+$client = Client::create(
+    httpClient: $psr18,
+    requestFactory: $requestFactory,
+    streamFactory: $streamFactory,
+    apiKey: 'your-api-key',
+);
 ```
 
 `HttpClientInterface::sendRequest()` takes an optional timeout argument, so
-custom clients can honour per-request timeouts.
+implementations can honour per-request timeouts. A bare PSR-18 client keeps its
+own timeout: combining it with a non-null `ClientConfig::timeout` or a per-call
+timeout throws `InvalidArgumentException`.
 
 ## Testing
 
 ```bash
-composer ci        # pint -> stan -> test:unit (exactly what CI runs)
+composer ci        # validate -> pint -> stan -> test:unit (exactly what CI runs)
 composer pint      # style check only — never fixes
 composer stan      # PHPStan level 8 over src/
 composer test      # every test, smoke included

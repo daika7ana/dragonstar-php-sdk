@@ -11,7 +11,7 @@ final class ClientConfig
     public function __construct(
         public string $baseUrl = self::BASE_URL_PRODUCTION,
         public string $apiKey = '',
-        public ?float $timeout = 30.0,
+        public ?float $timeout = null,
     ) {}
 
     public function withBaseUrl(string $baseUrl): self

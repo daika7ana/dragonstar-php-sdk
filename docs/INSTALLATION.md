@@ -4,7 +4,8 @@
 
 - PHP **8.3+** with `ext-json`
 - Composer 2
-- PSR-7 / PSR-17 / PSR-18 compatible environment (installed automatically)
+- PSR-7 / PSR-17 / PSR-18 interfaces (installed automatically; Guzzle supplies
+  the implementations and ships with the package)
 
 ## Install
 
@@ -12,17 +13,11 @@
 composer require daika7ana/dragonstar-php-sdk
 ```
 
-The package ships with a Guzzle adapter. It also requires `psr/http-client`,
-`psr/http-message` and `psr/http-factory`, so any PSR-18 client can be used.
-
-## Optional Symfony/Laravel bridge
-
-`Daika7ana\DragonStar\Support\HttpFoundationBridge` is opt-in. It is not in
-`require`, because the core must stay framework-agnostic:
-
-```bash
-composer require symfony/http-foundation
-```
+The package ships with a Guzzle adapter and Guzzle is installed as a runtime
+dependency, so there is no extra install step. It also requires `psr/http-client`,
+`psr/http-message` and `psr/http-factory`, so any PSR-18 client can be passed to
+`Client::create()` and is wrapped automatically — supplying its own PSR-17 factories
+only if you do not use Guzzle's.
 
 ## Verify
 

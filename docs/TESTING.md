@@ -3,7 +3,7 @@
 ## Commands
 
 ```bash
-composer ci        # pint -> stan -> test:unit (exactly what CI runs)
+composer ci        # validate -> pint -> stan -> test:unit (exactly what CI runs)
 composer pint      # style check only — never fixes
 composer stan      # PHPStan level 8 over src/
 composer test      # every test, smoke included
@@ -41,7 +41,8 @@ $this->assertSame('/v1/counties', $httpClient->lastRequest?->getUri()->getPath()
 ```
 
 `$httpClient->lastRequest` and `lastTimeout` let you assert method, path, query,
-headers and body.
+headers and body. `lastTimeout` is `null` when `ClientConfig::timeout` is left
+unset.
 
 `ResponseFixtureFactory` provides problem-document and `AwbCreated` fixtures.
 

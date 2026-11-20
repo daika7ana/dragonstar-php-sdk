@@ -16,7 +16,7 @@ $config = (new ClientConfig(apiKey: 'key'))
 | --- | --- | --- | --- |
 | `baseUrl` | `baseUrl` | `https://api.curierdragonstar.ro` | API root; no trailing slash |
 | `apiKey` | `apiKey` | `''` | Sent as `X-Api-Key`; omitted when empty |
-| `timeout` | `timeout` | `30.0` | Request timeout in seconds; `null` defers to the HTTP client (Guzzle's default is no timeout) |
+| `timeout` | `timeout` | `null` | Request timeout in seconds; `null` defers to the HTTP client (the bundled `GuzzleHttpClient` uses 30.0s, and 10.0s to connect) |
 
 ## Creating a client
 
@@ -34,11 +34,13 @@ $client = Client::create(config: new ClientConfig(
 ));
 ```
 
+`timeout` is optional; leave it `null` to use the transport's own timeout.
+
 `Client::create()` accepts:
 
 | Parameter | Purpose |
 | --- | --- |
-| `httpClient` | A `HttpClientInterface` (PSR-18 plus timeout) |
+| `httpClient` | A PSR-18 client, or a `HttpClientInterface` (PSR-18 plus timeout). A non-null `ClientConfig::timeout` requires `HttpClientInterface` |
 | `requestFactory` | A PSR-17 request factory |
 | `streamFactory` | A PSR-17 stream factory |
 | `config` | A `ClientConfig` |
@@ -68,6 +70,8 @@ $client = Client::create(config: $config);
 $client->send($client->createRequest('GET', '/v1/counties'), 2.5);
 ```
 
+`ClientConfig::timeout` is `null` by default. Precedence: the per-call argument → `ClientConfig::timeout` → the transport's own default (`GuzzleHttpClient` uses 30 s to respond and 10 s to connect unless you pass `timeout:`/`connectTimeout:`; an injected `GuzzleClient` keeps its own configuration). A bare PSR-18 client keeps its own timeout and cannot receive the per-call argument — passing one throws `InvalidArgumentException`; combining a bare client with a non-null `ClientConfig::timeout` also throws.
+
 ## Changing the key at runtime
 
 ```php
@@ -78,32 +82,20 @@ $client->setApiKey('rotated-key');
 
 ## Custom HTTP client
 
+Any PSR-18 client works. Implement `HttpClientInterface` (adds `?float $timeout`) only if you want the SDK's per-request timeout.
+
 ```php
 use Daika7ana\DragonStar\Client;
-use Daika7ana\DragonStar\Http\HttpClientInterface;
 
-/** @var HttpClientInterface $customClient */
-$client = Client::create(httpClient: $customClient, apiKey: 'key');
-```
-
-Your implementation must implement:
-
-```php
-public function sendRequest(
-    Psr\Http\Message\RequestInterface $request,
-    ?float $timeout = null,
-): Psr\Http\Message\ResponseInterface;
+/** @var \Psr\Http\Client\ClientInterface $psr18 */
+/** @var \Psr\Http\Message\RequestFactoryInterface $requestFactory */
+/** @var \Psr\Http\Message\StreamFactoryInterface $streamFactory */
+$client = Client::create(
+    httpClient: $psr18,
+    requestFactory: $requestFactory,
+    streamFactory: $streamFactory,
+    apiKey: 'key',
+);
 ```
 
 Transport failures should surface as `Daika7ana\DragonStar\Exceptions\TransportException`.
-
-## Optional HttpFoundation bridge
-
-```php
-use Daika7ana\DragonStar\Support\HttpFoundationBridge;
-```
-
-- `toSymfonyRequest()` / `toSymfonyResponse()` — PSR-7 to Symfony
-- `fromSymfonyRequest()` — Symfony to PSR-7
-
-Install `symfony/http-foundation` yourself to use it.

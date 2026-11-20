@@ -7,10 +7,12 @@ namespace Daika7ana\DragonStar;
 use Daika7ana\DragonStar\Config\ClientConfig;
 use Daika7ana\DragonStar\Http\GuzzleHttpClient;
 use Daika7ana\DragonStar\Http\HttpClientInterface;
+use Daika7ana\DragonStar\Http\Psr18HttpClientAdapter;
 use Daika7ana\DragonStar\Resources\AwbResource;
 use Daika7ana\DragonStar\Resources\DirectoryResource;
 use Daika7ana\DragonStar\Resources\ManifestResource;
 use Daika7ana\DragonStar\Resources\PickupResource;
+use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -18,6 +20,8 @@ use Psr\Http\Message\StreamFactoryInterface;
 
 class Client
 {
+    private HttpClientInterface $httpClient;
+
     private ClientConfig $config;
 
     private ?AwbResource $awbResource = null;
@@ -29,11 +33,18 @@ class Client
     private ?DirectoryResource $directoryResource = null;
 
     public function __construct(
-        private HttpClientInterface $httpClient,
+        ClientInterface $httpClient,
         private RequestFactoryInterface $requestFactory,
         private StreamFactoryInterface $streamFactory,
         ?ClientConfig $config = null,
     ) {
+        if ($config?->timeout !== null && !$httpClient instanceof HttpClientInterface) {
+            throw new \InvalidArgumentException('ClientConfig::timeout cannot be applied to a foreign PSR-18 client; configure the timeout on that client or leave it null.');
+        }
+
+        $this->httpClient = $httpClient instanceof HttpClientInterface
+            ? $httpClient
+            : new Psr18HttpClientAdapter($httpClient);
         $this->config = $config ?? new ClientConfig();
     }
 
@@ -102,7 +113,7 @@ class Client
     }
 
     public static function create(
-        ?HttpClientInterface $httpClient = null,
+        ?ClientInterface $httpClient = null,
         ?RequestFactoryInterface $requestFactory = null,
         ?StreamFactoryInterface $streamFactory = null,
         ?ClientConfig $config = null,

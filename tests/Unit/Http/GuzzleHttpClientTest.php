@@ -17,6 +17,28 @@ use PHPUnit\Framework\TestCase;
 
 class GuzzleHttpClientTest extends TestCase
 {
+    public function testDefaultConstructionConfiguresTransportTimeouts(): void
+    {
+        $client = new GuzzleHttpClient();
+
+        $property = new \ReflectionProperty(GuzzleHttpClient::class, 'guzzleClient');
+        $guzzle = $property->getValue($client);
+
+        $this->assertSame(30.0, $guzzle->getConfig('timeout'));
+        $this->assertSame(10.0, $guzzle->getConfig('connect_timeout'));
+    }
+
+    public function testConstructorTimeoutsOverrideTheTransportDefaults(): void
+    {
+        $client = new GuzzleHttpClient(null, 5.0, 2.0);
+
+        $property = new \ReflectionProperty(GuzzleHttpClient::class, 'guzzleClient');
+        $guzzle = $property->getValue($client);
+
+        $this->assertSame(5.0, $guzzle->getConfig('timeout'));
+        $this->assertSame(2.0, $guzzle->getConfig('connect_timeout'));
+    }
+
     public function testTransportErrorsAreMappedToTransportException(): void
     {
         $request = new Request('GET', ClientConfig::BASE_URL_PRODUCTION . '/v1/counties');
@@ -73,19 +95,22 @@ class GuzzleHttpClientTest extends TestCase
         $this->assertSame(422, $response->getStatusCode());
     }
 
-    public function testSendRequestIsUsedWhenNoTimeoutProvided(): void
+    public function testOptionsArePassedWithoutTimeout(): void
     {
-        $request = new Request('GET', ClientConfig::BASE_URL_PRODUCTION . '/v1/counties');
+        $request = new Request('POST', ClientConfig::BASE_URL_PRODUCTION . '/v1/awb');
 
         $guzzle = $this->createMock(GuzzleClient::class);
         $guzzle->expects($this->once())
-            ->method('sendRequest')
-            ->with($request)
-            ->willReturn(new Response(200));
+            ->method('send')
+            ->with($request, [
+                'http_errors' => false,
+                'allow_redirects' => false,
+            ])
+            ->willReturn(new Response(422));
 
         $client = new GuzzleHttpClient($guzzle);
         $response = $client->sendRequest($request);
 
-        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame(422, $response->getStatusCode());
     }
 }
