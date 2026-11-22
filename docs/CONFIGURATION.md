@@ -72,6 +72,13 @@ $client->send($client->createRequest('GET', '/v1/counties'), 2.5);
 
 `ClientConfig::timeout` is `null` by default. Precedence: the per-call argument → `ClientConfig::timeout` → the transport's own default (`GuzzleHttpClient` uses 30 s to respond and 10 s to connect unless you pass `timeout:`/`connectTimeout:`; an injected `GuzzleClient` keeps its own configuration). A bare PSR-18 client keeps its own timeout and cannot receive the per-call argument — passing one throws `InvalidArgumentException`; combining a bare client with a non-null `ClientConfig::timeout` also throws.
 
+When some calls need a different budget than the rest, derive a client:
+`$slowClient = $client->withTimeout(30.0);` returns a new client sharing the
+transport, the PSR-17 factories and the API key as of derivation (a later
+`setApiKey()` on either client affects only that client), so no new transport is
+built; the original client keeps its timeout. `withTimeout(null)` returns to the
+transport default.
+
 ## Changing the key at runtime
 
 ```php

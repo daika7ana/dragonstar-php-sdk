@@ -142,7 +142,8 @@ Keep the key out of source control and read it from the environment instead, for
 Requests time out after 30 seconds by default with the bundled transport (10
 seconds to connect); an injected `GuzzleClient` keeps its own timeout
 configuration. Override the default with `new ClientConfig(timeout: 60.0)` or
-`withTimeout()`, and leave `timeout` at `null` to defer to the HTTP client.
+`ClientConfig::withTimeout()`, and leave `timeout` at `null` to defer to the HTTP
+client.
 
 Precedence, highest first: a per-call override, then `ClientConfig::timeout`,
 then the transport constructor arguments, then the bundled 30.0/10.0 defaults. A
@@ -151,6 +152,9 @@ per-call override always wins:
 ```php
 $client->send($request, 2.5);
 ```
+
+For a different budget, `$slow = $client->withTimeout(30.0);` returns a new
+client sharing the transport; the original keeps its timeout.
 
 ## Authentication
 

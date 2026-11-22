@@ -134,6 +134,25 @@ class ClientTest extends TestCase
         );
     }
 
+    public function testWithTimeoutDerivesAClientSharingTransportAndApiKey(): void
+    {
+        [$client, $httpClient] = \Daika7ana\DragonStar\Tests\Support\TestClientFactory::create(
+            static fn() => new Response(200, [], '{"data":{"CJ":"Cluj"}}'),
+        );
+
+        $client->setApiKey('rotated-key');
+
+        $derived = $client->withTimeout(30.0);
+
+        $this->assertSame(30.0, $derived->getConfig()->timeout);
+        $this->assertNull($client->getConfig()->timeout);
+        $this->assertSame('rotated-key', $derived->getConfig()->apiKey);
+
+        $derived->directory()->counties();
+
+        $this->assertSame(30.0, $httpClient->lastTimeout);
+    }
+
     public function testResourcesAreLazySingletons(): void
     {
         $client = Client::create();
@@ -175,5 +194,27 @@ class ClientTest extends TestCase
             $this->assertSame(60, $exception->retryAfter);
             $this->assertStringContainsString('HTTP 503', $exception->getMessage());
         }
+    }
+
+    public function testWithTimeoutRejectsForeignPsr18ClientTransport(): void
+    {
+        $psr18 = new class implements ClientInterface {
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                throw new \RuntimeException('not used');
+            }
+        };
+
+        $client = Client::create(
+            config: new ClientConfig(apiKey: 'test-api-key'),
+            httpClient: $psr18,
+        );
+
+        $client->withTimeout(null);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('ClientConfig::timeout cannot be applied to a foreign PSR-18 client; configure the timeout on that client or leave it null.');
+
+        $client->withTimeout(30.0);
     }
 }
