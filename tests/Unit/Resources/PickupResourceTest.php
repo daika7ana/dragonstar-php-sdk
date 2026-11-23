@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Daika7ana\DragonStar\Tests\Unit\Resources;
 
-use Daika7ana\DragonStar\Exceptions\ApiException;
+use Daika7ana\DragonStar\Exceptions\UnexpectedStatusException;
 use Daika7ana\DragonStar\Tests\Support\TestClientFactory;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
@@ -37,7 +37,7 @@ class PickupResourceTest extends TestCase
     {
         [$client, ] = TestClientFactory::create(static fn() => new Response(201, [], '{}'));
 
-        $this->expectException(ApiException::class);
+        $this->expectException(UnexpectedStatusException::class);
         $this->expectExceptionMessage('missing the required field "pickupId"');
 
         $client->pickups()->create([
@@ -52,7 +52,7 @@ class PickupResourceTest extends TestCase
     {
         [$client, ] = TestClientFactory::create(static fn() => new Response(201));
 
-        $this->expectException(ApiException::class);
+        $this->expectException(UnexpectedStatusException::class);
 
         $client->pickups()->create([
             'pickupDate' => '2026-11-19',
@@ -88,7 +88,7 @@ class PickupResourceTest extends TestCase
         $this->assertSame('/v1/pickups/12345', $httpClient->lastRequest?->getUri()->getPath());
     }
 
-    public function testCancellingACollectedPickupThrowsApiException(): void
+    public function testCancellingACollectedPickupThrowsUnexpectedStatus(): void
     {
         [$client, ] = TestClientFactory::create(
             static fn() => new Response(409, [], json_encode([
@@ -102,10 +102,10 @@ class PickupResourceTest extends TestCase
 
         try {
             $client->pickups()->cancel(12345);
-            $this->fail('Expected ApiException to be thrown.');
-        } catch (ApiException $exception) {
-            $this->assertSame(409, $exception->status);
-            $this->assertSame('pickup_not_cancellable', $exception->errorCode);
+            $this->fail('Expected UnexpectedStatusException to be thrown.');
+        } catch (UnexpectedStatusException $exception) {
+            $this->assertSame(409, $exception->error?->code);
+            $this->assertSame('pickup_not_cancellable', $exception->error?->raw['code']);
         }
     }
 }

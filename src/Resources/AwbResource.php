@@ -15,7 +15,10 @@ use Daika7ana\DragonStar\DTOs\Awb\TrackingBatch;
 use Daika7ana\SimpleCollections\Collection;
 use Daika7ana\DragonStar\DTOs\Common\Document;
 use Daika7ana\DragonStar\Enums\LabelFormat;
-use Daika7ana\DragonStar\Exceptions\ApiException;
+use Daika7ana\DragonStar\DTOs\Common\Errors\DragonStarError;
+use Daika7ana\DragonStar\Exceptions\AuthenticationException;
+use Daika7ana\DragonStar\Exceptions\UnexpectedStatusException;
+use Daika7ana\DragonStar\Exceptions\ValidationException;
 use Daika7ana\DragonStar\Support\ApiResponseMapper;
 use Daika7ana\DragonStar\Support\JsonHelper;
 use JsonException;
@@ -34,7 +37,9 @@ class AwbResource
      *
      * @param AwbCreateRequest|array<string, mixed> $request
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     public function create(AwbCreateRequest|array $request): AwbCreated
     {
@@ -48,7 +53,9 @@ class AwbResource
      *
      * @param AwbCreateRequest|array<string, mixed> $request
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     public function createForBranch(int $branchId, AwbCreateRequest|array $request): AwbCreated
     {
@@ -62,7 +69,9 @@ class AwbResource
      *
      * @param AwbQuoteRequest|array<string, mixed> $request
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     public function quote(AwbQuoteRequest|array $request): Quote
     {
@@ -74,7 +83,9 @@ class AwbResource
      *
      * @param AwbQuoteRequest|array<string, mixed> $request
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     public function quoteForBranch(int $branchId, AwbQuoteRequest|array $request): Quote
     {
@@ -84,7 +95,9 @@ class AwbResource
     /**
      * Track one shipment.
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     public function track(int $awb, bool $includeEvents = true): Tracking
     {
@@ -99,7 +112,9 @@ class AwbResource
      *
      * @param list<int> $awbs
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     public function trackMany(array $awbs, bool $includeEvents = false): TrackingBatch
     {
@@ -112,7 +127,9 @@ class AwbResource
     /**
      * Delete a shipment. Only possible before pickup, manifest or invoice.
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     public function delete(int $awb): void
     {
@@ -127,7 +144,9 @@ class AwbResource
      *
      * @return Collection<int, ReturnLeg>
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     public function returnLegs(int $awb): Collection
     {
@@ -147,7 +166,9 @@ class AwbResource
     /**
      * Download the label in the account's configured format.
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     public function label(int $awb): Document
     {
@@ -164,7 +185,9 @@ class AwbResource
     /**
      * Download the PDF label as A4 or A6.
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     public function labelAs(int $awb, LabelFormat $format): Document
     {
@@ -181,7 +204,9 @@ class AwbResource
     /**
      * Download the ZPL label of one piece (1 = the piece with the AWB barcode).
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     public function zplLabel(int $awb, int $piece = 1): Document
     {
@@ -201,7 +226,9 @@ class AwbResource
      *
      * @return array<string, mixed>
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     private function sendJson(
         string $path,
@@ -216,11 +243,15 @@ class AwbResource
         try {
             $body = JsonHelper::encode($data);
         } catch (JsonException $e) {
-            throw new ApiException(
-                status: 0,
-                errorCode: 'invalid_request',
-                title: 'Request body is not encodable',
-                detail: $e->getMessage(),
+            throw new UnexpectedStatusException(
+                null,
+                'Request body is not encodable: ' . $e->getMessage(),
+                error: DragonStarError::fromArray([
+                    'status' => 0,
+                    'code' => 'invalid_request',
+                    'title' => 'Request body is not encodable',
+                    'detail' => $e->getMessage(),
+                ]),
             );
         }
 
@@ -234,7 +265,7 @@ class AwbResource
 
         foreach ($requiredKeys as $key) {
             if (!array_key_exists($key, $decoded)) {
-                throw ApiException::invalidBody(
+                throw ApiResponseMapper::invalidBody(
                     $response,
                     sprintf('Response is missing the required field "%s".', $key),
                 );

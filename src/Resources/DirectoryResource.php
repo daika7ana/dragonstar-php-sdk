@@ -8,7 +8,9 @@ use Daika7ana\DragonStar\Client;
 use Daika7ana\SimpleCollections\Collection;
 use Daika7ana\DragonStar\DTOs\Directory\BranchList;
 use Daika7ana\DragonStar\DTOs\Directory\LocalityDistance;
-use Daika7ana\DragonStar\Exceptions\ApiException;
+use Daika7ana\DragonStar\Exceptions\AuthenticationException;
+use Daika7ana\DragonStar\Exceptions\UnexpectedStatusException;
+use Daika7ana\DragonStar\Exceptions\ValidationException;
 use Daika7ana\DragonStar\Support\ApiResponseMapper;
 
 /**
@@ -27,7 +29,9 @@ class DirectoryResource
      *
      * @return Collection<string, string>
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     public function counties(): Collection
     {
@@ -48,7 +52,9 @@ class DirectoryResource
      *
      * @return Collection<int, string>
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     public function localities(string $county): Collection
     {
@@ -62,7 +68,9 @@ class DirectoryResource
      *
      * @return Collection<int, LocalityDistance>
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     public function localitiesWithDistances(string $county): Collection
     {
@@ -79,7 +87,9 @@ class DirectoryResource
     /**
      * Branches the master account may ship for.
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     public function branches(): BranchList
     {
@@ -89,7 +99,9 @@ class DirectoryResource
     /**
      * @return array<string, mixed>
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     private function getJson(string $path): array
     {

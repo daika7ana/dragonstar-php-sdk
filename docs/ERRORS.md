@@ -1,17 +1,36 @@
 # Error Handling
 
-Every API error is surfaced as one of three exceptions:
+Every API error is surfaced as one of these exceptions:
 
-- `Daika7ana\DragonStar\Exceptions\ApiException` — the API answered with a
-  non-success status, or with a success status and an unusable body.
+- `Daika7ana\DragonStar\Exceptions\AuthenticationException` — the API
+  answered `401` (missing, unknown or expired API key).
+- `Daika7ana\DragonStar\Exceptions\ValidationException` — the request body
+  was rejected (`400`/`422`).
+- `Daika7ana\DragonStar\Exceptions\UnexpectedStatusException` — any other
+  non-success status, or a success response with an unusable body.
 - `Daika7ana\DragonStar\Exceptions\TransportException` — the request never
   produced a response (DNS, TLS, timeout, connection reset).
-- `Daika7ana\DragonStar\Exceptions\DragonStarException` — the common base, if
-  you prefer a single catch.
+- `Daika7ana\DragonStar\Exceptions\DragonStarException` — the common base,
+  if you prefer a single catch.
 
-## ApiException
+## Status mapping
 
-The API returns RFC 9457 `application/problem+json` documents:
+| Response status | Exception |
+| --- | --- |
+| `401` | `AuthenticationException` |
+| `400`, `422` | `ValidationException` |
+| any other non-2xx | `UnexpectedStatusException` |
+
+A `403` (`ip_not_allowed`, `account_not_eligible`) is an
+`UnexpectedStatusException`, not an `AuthenticationException`: the key was
+accepted, the operation was not permitted.
+
+Status alone decides the class. A non-empty `errors` map never flips a
+`403`/`404`/`5xx` into `ValidationException`; it stays in `$error->raw['errors']`.
+
+## RFC 9457 problem details
+
+The API returns `application/problem+json` documents:
 
 ```json
 {
@@ -23,26 +42,50 @@ The API returns RFC 9457 `application/problem+json` documents:
 }
 ```
 
-`ApiException` exposes those fields:
+`Daika7ana\DragonStar\DTOs\Common\Errors\DragonStarError` is the shared
+error DTO carried by the three HTTP-level exceptions:
 
 | Property | Type | Notes |
 | --- | --- | --- |
-| `status` | `int` | HTTP status (also the exception code) |
-| `errorCode` | `string` | Stable code — branch on this |
-| `type` | `string` | Problem type URI (not a URL to call) |
-| `title` | `string` | Short, stable category |
-| `detail` | `string` | Human-readable, may change |
-| `errors` | `array<string, list<string>>` | Field messages on `validation_failed` |
-| `retryAfter` | `?int` | Seconds, from `Retry-After` |
-| `response` | `?ResponseInterface` | The raw PSR-7 response |
+| `code` | `int` | HTTP status (or the supplied fallback when the body has none) |
+| `message` | `string` | `detail`, falling back to `title` |
+| `id` | `string` | Problem id when the API sends one |
+| `raw` | `array<string, mixed>` | Full parsed body: `type`, `title`, `status`, `code`, `detail`, `errors` |
+| `context` | `?string` | Optional problem context |
+| `component` | `?string` | Optional component name |
 
-The exception message is `detail (HTTP <status>, <code>)`.
+The typed contract is `code`, `message`, `id`, `context` and `component`.
+Everything else in the RFC 9457 document — `type`, `title` and the API error
+code (`raw['code']`) — stays readable in `$error->raw[...]`. `context` and
+`component` are carrier-defined: passed through when the server sends them,
+`null` otherwise.
+
+Branch on `raw['code']` (the stable API error code), never on `message`.
+`isValidationRelated()` is true for status `400`/`422` or a non-empty
+`errors` map; `isAuthenticationRelated()` is true for status `401`/`403`.
+
+## Exception properties
+
+| Exception | Properties |
+| --- | --- |
+| `AuthenticationException` | `response`, `retryAfter`, `error` |
+| `ValidationException` | `errors` (`array<string, list<string>>`), `response`, `retryAfter`, `error` |
+| `UnexpectedStatusException` | `response`, `retryAfter`, `error` |
+
+`response` is the raw PSR-7 response, `retryAfter` the numeric `Retry-After`
+value in seconds, and `error` the parsed `DragonStarError`. All three are
+nullable: a locally raised exception has no response.
+
+`getCode()` returns the HTTP status whenever the exception carries a
+`response`, otherwise `0` — as for a request body that cannot be encoded.
 
 ```php
 use Daika7ana\DragonStar\DTOs\Awb\AwbCreateRequest;
 use Daika7ana\DragonStar\Enums\ShipmentType;
-use Daika7ana\DragonStar\Exceptions\ApiException;
+use Daika7ana\DragonStar\Exceptions\AuthenticationException;
 use Daika7ana\DragonStar\Exceptions\TransportException;
+use Daika7ana\DragonStar\Exceptions\UnexpectedStatusException;
+use Daika7ana\DragonStar\Exceptions\ValidationException;
 
 $request = new AwbCreateRequest(
     shipmentType: ShipmentType::Parcel,
@@ -56,12 +99,14 @@ $request = new AwbCreateRequest(
 
 try {
     $client->awb()->create($request);
-} catch (ApiException $e) {
-    if ($e->errorCode === 'validation_failed') {
-        foreach ($e->errors as $field => $messages) {
-            printf("%s: %s\n", $field, implode(', ', $messages));
-        }
-    } elseif ($e->errorCode === 'rate_limit_exceeded') {
+} catch (ValidationException $e) {
+    foreach ($e->errors as $field => $messages) {
+        printf("%s: %s\n", $field, implode(', ', $messages));
+    }
+} catch (AuthenticationException|UnexpectedStatusException $e) {
+    $code = $e->error?->raw['code'] ?? 'unknown_error';
+
+    if ($code === 'rate_limit_exceeded') {
         sleep($e->retryAfter ?? 1);
     }
 } catch (TransportException $e) {
@@ -95,18 +140,19 @@ try {
 
 ## SDK-generated codes
 
-Two codes never come from the server:
+Two codes never come from the server; both are carried by
+`UnexpectedStatusException::$error->raw['code']`:
 
 | Code | Status | Cause |
 | --- | --- | --- |
-| `invalid_response` | the response status (usually 200) | Body is not a JSON object |
+| `invalid_response` | the response status (usually 200) | Body is not a JSON object, or is missing a required field |
 | `invalid_request` | 0 | A request DTO contains a non-UTF-8 string and cannot be encoded |
 
 ## Validation
 
-Only `422` carries field errors. The API normalizes them as
-`field => list of messages`, and `$e->errors` preserves that shape. The
-exception message uses `detail`, so it is safe to log but not to parse.
+`ValidationException` is thrown only for `400`/`422`. The API normalizes field
+errors as `field => list of messages`, and `$e->errors` preserves that shape.
+Scalar messages are wrapped in a list.
 
 AWB numbers are validated before lookup: a value that is not 8 digits starting
 with 9 fails with `validation_failed` (`awb` or `awbs` field), not

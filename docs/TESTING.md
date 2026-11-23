@@ -8,6 +8,7 @@ composer pint      # style check only — never fixes
 composer stan      # PHPStan level 8 over src/
 composer test      # every test, smoke included
 composer test:unit # tests/Unit only
+composer test:smoke # tests/Smoke only, self-skips without a key
 vendor/bin/pint    # the only way to actually fix style
 ```
 

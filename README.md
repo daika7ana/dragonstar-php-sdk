@@ -36,7 +36,7 @@ A modern, type-safe PHP SDK for the **Dragon Star courier API**
 - ✅ **PSR-18 HTTP Client** — Pluggable, with a Guzzle adapter by default
 - ✅ **Fully Typed DTOs** — Requests and responses, no vague arrays required
 - ✅ **Every v1 Endpoint** — AWB creation, quotes, tracking, labels, pickups, manifests, nomenclature
-- ✅ **RFC 9457 Errors** — One `ApiException` exposing the stable `code`, field errors and `Retry-After`
+- ✅ **RFC 9457 Errors** — `AuthenticationException`, `ValidationException` and `UnexpectedStatusException`, each with `$response`, `$retryAfter` and a parsed `DragonStarError`
 - ✅ **Typed Tracking** — Status enum, events, locations and return legs
 - ✅ **Binary Documents** — PDF/ZPL labels and manifest PDFs with filename helpers
 - ✅ **Iterable Collections** — `count`, `first`, `last`, `get`, `filter`, `map`, `pluck`, …

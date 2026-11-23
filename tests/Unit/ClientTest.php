@@ -6,7 +6,7 @@ namespace Daika7ana\DragonStar\Tests\Unit;
 
 use Daika7ana\DragonStar\Client;
 use Daika7ana\DragonStar\Config\ClientConfig;
-use Daika7ana\DragonStar\Exceptions\ApiException;
+use Daika7ana\DragonStar\Exceptions\UnexpectedStatusException;
 use Daika7ana\DragonStar\Tests\Support\FakeHttpClient;
 use GuzzleHttp\Psr7\HttpFactory;
 use GuzzleHttp\Psr7\Response;
@@ -163,7 +163,7 @@ class ClientTest extends TestCase
         $this->assertSame($client->directory(), $client->directory());
     }
 
-    public function testInvalidJsonSuccessBodyThrowsApiExceptionWithResponse(): void
+    public function testInvalidJsonSuccessBodyThrowsUnexpectedStatusWithResponse(): void
     {
         [$client, ] = \Daika7ana\DragonStar\Tests\Support\TestClientFactory::create(
             static fn() => new Response(200, [], '<html>not json</html>'),
@@ -171,11 +171,10 @@ class ClientTest extends TestCase
 
         try {
             $client->awb()->track(94348148);
-            $this->fail('Expected ApiException to be thrown.');
-        } catch (ApiException $exception) {
-            $this->assertSame(200, $exception->status);
-            $this->assertSame('invalid_response', $exception->errorCode);
-            $this->assertNotNull($exception->response);
+            $this->fail('Expected UnexpectedStatusException to be thrown.');
+        } catch (UnexpectedStatusException $exception) {
+            $this->assertSame(200, $exception->response?->getStatusCode());
+            $this->assertSame('invalid_response', $exception->error?->raw['code']);
         }
     }
 
@@ -187,12 +186,11 @@ class ClientTest extends TestCase
 
         try {
             $client->directory()->counties();
-            $this->fail('Expected ApiException to be thrown.');
-        } catch (ApiException $exception) {
-            $this->assertSame(503, $exception->status);
-            $this->assertSame('unknown_error', $exception->errorCode);
+            $this->fail('Expected UnexpectedStatusException to be thrown.');
+        } catch (UnexpectedStatusException $exception) {
+            $this->assertSame(503, $exception->error?->code);
             $this->assertSame(60, $exception->retryAfter);
-            $this->assertStringContainsString('HTTP 503', $exception->getMessage());
+            $this->assertStringContainsString('503', $exception->getMessage());
         }
     }
 

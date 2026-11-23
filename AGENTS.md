@@ -20,6 +20,7 @@ composer pint       # style check only, never fixes
 composer stan       # PHPStan level 8 over src/
 composer test       # full PHPUnit suite, smoke self-skips without a key
 composer test:unit  # tests/Unit only
+composer test:smoke # tests/Smoke only, self-skips without a key
 vendor/bin/pint     # the only way to auto-fix style
 ```
 
@@ -84,10 +85,14 @@ user guides.
 
 - Auth is one `X-Api-Key` header, omitted when the key is empty;
   `Client::create(apiKey: …)` is the shortcut. No OAuth or token store.
-- Errors follow RFC 9457: `ApiException::fromResponse()` exposes `errorCode`,
-  `title`, `detail`, `errors` and `retryAfter` (from `Retry-After`); branch on
-  `errorCode`, never `detail`. A success body missing `awb`, `totalAmount` or
-  `pickupId` becomes `invalid_response`; only `POST /v1/manifests` (200) and
+- Errors follow RFC 9457: `DragonStarError` exposes the parsed body; branch on
+  `$error->raw['code']`, never `message`. `ApiResponseMapper` throws
+  `AuthenticationException` (401), `ValidationException` (400/422; a non-empty
+  `errors` map never changes the class, it only rides along on the error) and
+  `UnexpectedStatusException` (anything else); each
+  carries `response`, `retryAfter` (from `Retry-After`) and `error`. A success
+  body missing `awb`, `totalAmount` or `pickupId` becomes
+  `invalid_response`; only `POST /v1/manifests` (200) and
   `POST /v1/pickups/branch` (201) may return an empty success body.
 - County and locality are names (`Cluj`, `Cluj-Napoca`), never codes. Parcel needs
   `weight` + `pieces`; pallet needs `weight`; envelope ignores both and records
@@ -108,6 +113,10 @@ user guides.
 - Assert method, path, query, headers and body on `$httpClient->lastRequest`;
   every new endpoint needs such a test covering request, response and the
   operation-specific failure code.
-- `tests/Smoke/ClientSmokeTest.php` is `#[Group('smoke')]` and skips itself
-  without `DRAGONSTAR_TEST_API_KEY` (set it in the gitignored `phpunit.xml`); the
-  key's IP allowlist must include the machine. `composer ci` must pass before done.
+- `tests/Smoke/*` is `#[Group('smoke')]` and skips itself without
+  `DRAGONSTAR_TEST_API_KEY` (set it in the gitignored `phpunit.xml`); the key's
+  IP allowlist must include the machine. `DRAGONSTAR_SMOKE_AWB` adds live
+  tracking of an existing AWB. `DRAGONSTAR_SMOKE_ENABLE_WRITES=true` opts into
+  AWB and pickup creation; every created AWB is deleted and every pickup
+  cancelled in a `try/finally`, and a failed cleanup fails the test.
+  `composer ci` must pass before done.

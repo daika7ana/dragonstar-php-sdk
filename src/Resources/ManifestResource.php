@@ -7,7 +7,9 @@ namespace Daika7ana\DragonStar\Resources;
 use Daika7ana\DragonStar\Client;
 use Daika7ana\DragonStar\DTOs\Common\Document;
 use Daika7ana\DragonStar\DTOs\Manifest\ManifestCreated;
-use Daika7ana\DragonStar\Exceptions\ApiException;
+use Daika7ana\DragonStar\Exceptions\AuthenticationException;
+use Daika7ana\DragonStar\Exceptions\UnexpectedStatusException;
+use Daika7ana\DragonStar\Exceptions\ValidationException;
 use Daika7ana\DragonStar\Support\ApiResponseMapper;
 
 /**
@@ -24,7 +26,9 @@ class ManifestResource
      *
      * `manifestId` is null when there was nothing to close.
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     public function create(): ManifestCreated
     {
@@ -39,7 +43,9 @@ class ManifestResource
     /**
      * Download the manifest PDF.
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     public function pdf(int $manifestId): Document
     {

@@ -36,15 +36,19 @@ omitted when no key is configured).
 | `403` | `ip_not_allowed` | The key is valid but the request IP is not on its allowlist. |
 | `403` | `account_not_eligible` | The account may not use this operation. |
 
-All three throw `Daika7ana\DragonStar\Exceptions\ApiException`.
+A `401` throws `Daika7ana\DragonStar\Exceptions\AuthenticationException`.
+A `403` is an `UnexpectedStatusException` whose
+`$e->error->isAuthenticationRelated()` is true. The stable API code is on
+`$e->error->raw['code']`.
 
 ```php
-use Daika7ana\DragonStar\Exceptions\ApiException;
+use Daika7ana\DragonStar\Exceptions\AuthenticationException;
+use Daika7ana\DragonStar\Exceptions\UnexpectedStatusException;
 
 try {
     $client->directory()->counties();
-} catch (ApiException $e) {
-    if ($e->errorCode === 'ip_not_allowed') {
+} catch (AuthenticationException|UnexpectedStatusException $e) {
+    if ($e->error?->raw['code'] === 'ip_not_allowed') {
         // Add this machine's public IP to the key in the Dragon Star account.
     }
 }

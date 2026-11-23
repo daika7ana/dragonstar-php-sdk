@@ -10,7 +10,8 @@ use Daika7ana\DragonStar\Enums\CodPaymentType;
 use Daika7ana\DragonStar\Enums\LabelFormat;
 use Daika7ana\DragonStar\Enums\ShipmentStatus;
 use Daika7ana\DragonStar\Enums\ShipmentType;
-use Daika7ana\DragonStar\Exceptions\ApiException;
+use Daika7ana\DragonStar\Exceptions\UnexpectedStatusException;
+use Daika7ana\DragonStar\Exceptions\ValidationException;
 use Daika7ana\DragonStar\Support\JsonHelper;
 use Daika7ana\DragonStar\Tests\Support\ResponseFixtureFactory;
 use Daika7ana\DragonStar\Tests\Support\TestClientFactory;
@@ -322,10 +323,10 @@ class AwbResourceTest extends TestCase
 
         try {
             $client->awb()->create(['shipmentType' => 'parcel']);
-            $this->fail('Expected ApiException to be thrown.');
-        } catch (ApiException $exception) {
-            $this->assertSame(422, $exception->status);
-            $this->assertSame('validation_failed', $exception->errorCode);
+            $this->fail('Expected UnexpectedStatusException to be thrown.');
+        } catch (ValidationException $exception) {
+            $this->assertSame(422, $exception->getCode());
+            $this->assertSame('validation_failed', $exception->error?->raw['code']);
             $this->assertSame([
                 'weight' => ['required if shipmentType = parcel or pallet'],
             ], $exception->errors);
@@ -342,7 +343,7 @@ class AwbResourceTest extends TestCase
             )),
         );
 
-        $this->expectException(ApiException::class);
+        $this->expectException(UnexpectedStatusException::class);
         $this->expectExceptionMessage('AWB 94348148 does not exist.');
 
         $client->awb()->track(94348148);
@@ -354,9 +355,9 @@ class AwbResourceTest extends TestCase
 
         try {
             $client->awb()->create(['shipmentType' => 'envelope']);
-            $this->fail('Expected ApiException to be thrown.');
-        } catch (ApiException $exception) {
-            $this->assertSame('invalid_response', $exception->errorCode);
+            $this->fail('Expected UnexpectedStatusException to be thrown.');
+        } catch (UnexpectedStatusException $exception) {
+            $this->assertSame('invalid_response', $exception->error?->raw['code']);
             $this->assertStringContainsString('missing the required field "awb"', $exception->getMessage());
         }
     }
@@ -367,9 +368,9 @@ class AwbResourceTest extends TestCase
 
         try {
             $client->awb()->quote(['shipmentType' => 'envelope', 'recipientCounty' => 'Cluj', 'recipientCity' => 'Cluj-Napoca']);
-            $this->fail('Expected ApiException to be thrown.');
-        } catch (ApiException $exception) {
-            $this->assertSame('invalid_response', $exception->errorCode);
+            $this->fail('Expected UnexpectedStatusException to be thrown.');
+        } catch (UnexpectedStatusException $exception) {
+            $this->assertSame('invalid_response', $exception->error?->raw['code']);
             $this->assertStringContainsString('"totalAmount"', $exception->getMessage());
         }
     }

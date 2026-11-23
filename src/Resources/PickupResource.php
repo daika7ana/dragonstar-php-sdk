@@ -7,7 +7,10 @@ namespace Daika7ana\DragonStar\Resources;
 use Daika7ana\DragonStar\Client;
 use Daika7ana\DragonStar\DTOs\Pickup\PickupCreated;
 use Daika7ana\DragonStar\DTOs\Pickup\PickupCreateRequest;
-use Daika7ana\DragonStar\Exceptions\ApiException;
+use Daika7ana\DragonStar\DTOs\Common\Errors\DragonStarError;
+use Daika7ana\DragonStar\Exceptions\AuthenticationException;
+use Daika7ana\DragonStar\Exceptions\UnexpectedStatusException;
+use Daika7ana\DragonStar\Exceptions\ValidationException;
 use Daika7ana\DragonStar\Support\ApiResponseMapper;
 use Daika7ana\DragonStar\Support\JsonHelper;
 use JsonException;
@@ -26,7 +29,9 @@ class PickupResource
      *
      * @param PickupCreateRequest|array<string, mixed> $request
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     public function create(PickupCreateRequest|array $request): PickupCreated
     {
@@ -39,7 +44,9 @@ class PickupResource
      *
      * @param PickupCreateRequest|array<string, mixed> $request
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     public function createForBranch(int $branchId, PickupCreateRequest|array $request): PickupCreated
     {
@@ -53,7 +60,9 @@ class PickupResource
     /**
      * Cancel a pickup, including one already sent to a courier.
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     public function cancel(int $pickupId): void
     {
@@ -68,7 +77,9 @@ class PickupResource
      *
      * @return array<string, mixed>
      *
-     * @throws ApiException
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
      */
     private function sendJson(
         string $path,
@@ -81,11 +92,15 @@ class PickupResource
         try {
             $body = JsonHelper::encode($data);
         } catch (JsonException $e) {
-            throw new ApiException(
-                status: 0,
-                errorCode: 'invalid_request',
-                title: 'Request body is not encodable',
-                detail: $e->getMessage(),
+            throw new UnexpectedStatusException(
+                null,
+                'Request body is not encodable: ' . $e->getMessage(),
+                error: DragonStarError::fromArray([
+                    'status' => 0,
+                    'code' => 'invalid_request',
+                    'title' => 'Request body is not encodable',
+                    'detail' => $e->getMessage(),
+                ]),
             );
         }
 
@@ -102,7 +117,7 @@ class PickupResource
         $decoded = ApiResponseMapper::decodeJson($response, $expectedStatus);
 
         if (!array_key_exists('pickupId', $decoded)) {
-            throw ApiException::invalidBody(
+            throw ApiResponseMapper::invalidBody(
                 $response,
                 'Response is missing the required field "pickupId".',
             );

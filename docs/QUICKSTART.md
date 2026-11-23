@@ -152,14 +152,18 @@ if ($manifest->manifestId !== null) {
 ## 9. Errors
 
 ```php
-use Daika7ana\DragonStar\Exceptions\ApiException;
+use Daika7ana\DragonStar\Exceptions\AuthenticationException;
+use Daika7ana\DragonStar\Exceptions\UnexpectedStatusException;
+use Daika7ana\DragonStar\Exceptions\ValidationException;
 
 try {
     $client->awb()->track(94348148);
-} catch (ApiException $e) {
-    echo $e->errorCode;   // stable, e.g. awb_not_found
-    echo $e->getMessage(); // human-readable detail
-    var_dump($e->errors);  // field errors on validation_failed
+} catch (ValidationException $e) {
+    echo $e->error?->raw['code']; // validation_failed
+    var_dump($e->errors);         // field errors
+} catch (AuthenticationException|UnexpectedStatusException $e) {
+    echo $e->error?->raw['code']; // stable, e.g. awb_not_found
+    echo $e->getMessage();        // human-readable detail
 }
 ```
 

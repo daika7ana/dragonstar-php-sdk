@@ -5,6 +5,28 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-11-23
+
+### Added
+
+- Live smoke coverage for localities, branches, quoting, tracking, labels and opt-in AWB/pickup lifecycle with guaranteed cleanup.
+
+- `DTOs\Common\Errors\DragonStarError` carrying the parsed RFC 9457 body plus `isValidationRelated()`/`isAuthenticationRelated()`.
+- `AuthenticationException`, `ValidationException` and `UnexpectedStatusException`, each exposing `response`, `retryAfter` and `error`.
+- `composer test:smoke` script; unit tests for `ClientConfig` and the enums.
+
+### Changed
+
+- **Breaking:** HTTP errors are classified as `AuthenticationException` (401), `ValidationException` (400/422) or `UnexpectedStatusException` (any other non-2xx or unparseable body).
+- **Breaking:** `invalid_response` and `invalid_request` are reported by `UnexpectedStatusException`; read the code from `$error->raw['code']`.
+- `UnexpectedStatusException::getCode()` returns the HTTP status when the exception carries a response, `0` otherwise.
+- **Breaking:** the exception class is decided by status alone; a non-empty `errors` map on a `403`/`404`/`5xx` no longer raises `ValidationException`, the map stays in `$error->raw['errors']`.
+- `AuthenticationException` and `ValidationException` derive `getCode()` from the response status, like `UnexpectedStatusException`.
+
+### Removed
+
+- **Breaking:** `ApiException`; its `status`, `errorCode`, `type`, `title`, `detail`, `errors` and `retryAfter` properties moved to the new exception set and `DragonStarError`.
+
 ## [1.2.0] - 2026-11-22
 
 ### Added
