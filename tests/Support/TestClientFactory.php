@@ -16,7 +16,7 @@ final class TestClientFactory
      * @param callable(RequestInterface): ResponseInterface $handler
      * @return array{Client, FakeHttpClient}
      */
-    public static function create(callable $handler): array
+    public static function create(callable $handler, ?ClientConfig $config = null): array
     {
         $httpClient = new FakeHttpClient($handler);
         $factory = new HttpFactory();
@@ -25,7 +25,7 @@ final class TestClientFactory
             httpClient: $httpClient,
             requestFactory: $factory,
             streamFactory: $factory,
-            config: new ClientConfig(apiKey: 'test-api-key'),
+            config: $config ?? new ClientConfig(apiKey: 'test-api-key'),
         );
 
         return [$client, $httpClient];
